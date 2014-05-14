@@ -115,7 +115,7 @@ class EuCentralBank < Money::Bank::VariableExchange
   protected
 
   def doc(use_cache=true, url=ECB_RATES_URL)
-    if use_cache
+    if use_cache and !cache(url).nil?
       case cache(url)
       when String
         Nokogiri::XML(open(cache(url))).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
@@ -123,11 +123,11 @@ class EuCentralBank < Money::Bank::VariableExchange
         doc_from_s(cache(url).call(nil))
       end
     else
-      save_rates(url)
+      save_rates(url) unless cache(url).nil?
       Nokogiri::XML(open(url)).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
     end
   rescue Nokogiri::XML::XPath::SyntaxError
-    save_rates(url)
+    save_rates(url) unless cache(url).nil?
     Nokogiri::XML(open(url))
   end
 

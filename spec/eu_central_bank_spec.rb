@@ -1,5 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require 'yaml'
+require 'pry'
 
 describe "EuCentralBank" do
   before(:each) do
@@ -10,18 +11,72 @@ describe "EuCentralBank" do
     @tmp_cache_path = File.expand_path(@dir_path + '/tmp/exchange_rates.xml')
     yml_cache_path = File.expand_path(@dir_path + '/exchange_rates.yml')
     @exchange_rates = YAML.load_file(yml_cache_path)
+    @cache_value = nil
   end
 
   after(:each) do
     if File.exists? @tmp_cache_path
       File.delete @tmp_cache_path
     end
+    @cache_value = nil
   end
 
   it "should save the xml file from ecb given a file path" do
     @bank.latest_cache = @tmp_cache_path
     @bank.save_rates
     File.exists?(@tmp_cache_path).should == true
+  end
+
+  describe 'using proc for cache' do
+    it "should call the cache proc with a value when given a proc" do
+      @bank.latest_cache = proc do |val|
+        @cache_value  = val
+      end
+      @bank.save_rates
+      @cache_value.should_not be(nil)
+    end
+
+    it "should restore the rates from the proc cache after saving them initially" do
+      # Get the current rates
+      get_count = 0
+      set_count = 0
+
+      @bank.latest_cache = proc do |val|
+        if val.nil?
+          get_count += 1
+          @cache_value
+        else
+          set_count += 1
+          @cache_value = val
+        end
+      end
+
+      @bank.update_rates
+      @bank.update_rates
+      set_count.should eq(1)
+      get_count.should eq(3)
+    end
+
+    it "should refresh the proc cahce if forced" do
+      get_count = 0
+      set_count = 0
+
+      @bank.latest_cache = proc do |val|
+        if val.nil?
+          get_count += 1
+          @cache_value
+        else
+          set_count += 1
+          @cache_value = val
+        end
+      end
+
+      @bank.update_rates
+      @bank.update_rates(false)
+      set_count.should eq(2)
+      get_count.should eq(2)
+    end
+
   end
 
   it "should save the xml file from ecb given a file path and url" do
@@ -33,7 +88,7 @@ describe "EuCentralBank" do
 
 
   it "should raise an error if an invalid path is given to save_rates" do
-    lambda { @bank.save_rates(nil) }.should raise_exception
+    lambda { @bank.save_rates }.should raise_exception
   end
 
   it "should update itself with exchange rates from ecb website" do

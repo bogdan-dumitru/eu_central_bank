@@ -114,8 +114,14 @@ class EuCentralBank < Money::Bank::VariableExchange
 
   protected
 
+  def valid_cache(url)
+    return false if cache(url).nil?
+    return false if cache(url).is_a?(Proc) and cache(url).call(nil) == nil
+    return true
+  end
+
   def doc(use_cache=true, url=ECB_RATES_URL)
-    if use_cache and !cache(url).nil?
+    if use_cache and valid_cache(url)
       case cache(url)
       when String
         Nokogiri::XML(open(cache(url))).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }

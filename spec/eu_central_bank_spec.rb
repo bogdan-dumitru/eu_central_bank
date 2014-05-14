@@ -19,13 +19,15 @@ describe "EuCentralBank" do
   end
 
   it "should save the xml file from ecb given a file path" do
-    @bank.save_rates(@tmp_cache_path)
+    @bank.latest_cache = @tmp_cache_path
+    @bank.save_rates
     File.exists?(@tmp_cache_path).should == true
   end
 
   it "should save the xml file from ecb given a file path and url" do
     tmp_history_cache_path = File.expand_path(@dir_path + '/tmp/exchange_rates_90_day.xml')
-    @bank.save_rates(tmp_history_cache_path, EuCentralBank::ECB_90_DAY_URL)
+    @bank.historical_cache = tmp_history_cache_path
+    @bank.save_rates(EuCentralBank::ECB_90_DAY_URL)
     File.exists?(tmp_history_cache_path).should == true
   end
 

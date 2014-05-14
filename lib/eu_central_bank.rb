@@ -11,7 +11,7 @@ class EuCentralBank < Money::Bank::VariableExchange
   attr_accessor :rates_updated_at
   attr_accessor :historical_last_updated
   attr_accessor :historical_rates_updated_at
-  attr_accessor :cache
+  attr_accessor :latest_cache, :historical_cache
   attr_reader   :ttl_in_seconds
   attr_reader   :rates_expiration
 
@@ -28,6 +28,13 @@ class EuCentralBank < Money::Bank::VariableExchange
     @rates_expiration = Time.now + ttl_in_seconds
   end
 
+  def cache(url)
+    case url
+    when ECB_RATES_URL then latest_cache
+    when ECB_90_DAY_URL then historical_cache
+    end
+  end
+
   def expire_rates
     if ttl_in_seconds and rates_expiration <= Time.now
       update_rates(false)
@@ -40,19 +47,19 @@ class EuCentralBank < Money::Bank::VariableExchange
   end
 
   def update_historical_rates
-    update_parsed_historical_rates(doc(ECB_90_DAY_URL)
+    update_parsed_historical_rates(doc(ECB_90_DAY_URL))
   end
 
   def save_rates(url=ECB_RATES_URL)
-    raise InvalidCache unless cache
-    case cache
+    raise InvalidCache unless cache(url)
+    case cache(url)
     when String
-      File.open(cache, "w") do |file|
+      File.open(cache(url), "w") do |file|
         io = open(url);
         io.each_line { |line| file.puts line }
       end
     when Proc
-      cache.call(save_rates_to_s(url))
+      cache(url).call(save_rates_to_s(url))
     end
   end
 
@@ -109,11 +116,11 @@ class EuCentralBank < Money::Bank::VariableExchange
 
   def doc(use_cache=true, url=ECB_RATES_URL)
     if use_cache
-      case cache
+      case cache(url)
       when String
-        Nokogiri::XML(open(cache)).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
+        Nokogiri::XML(open(cache(url))).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
       when Proc
-        doc_from_s(cache.call(nil))
+        doc_from_s(cache(url).call(nil))
       end
     else
       save_rates(url)

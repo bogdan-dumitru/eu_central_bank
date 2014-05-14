@@ -25,7 +25,8 @@ class EuCentralBank < Money::Bank::VariableExchange
   end
 
   def refresh_rates_expiration
-    @rates_expiration = Time.now + ttl_in_seconds
+    ttl = ttl_in_seconds.is_a?(Proc) ? ttl_in_seconds.call : ttl_in_seconds
+    @rates_expiration = Time.now + ttl
   end
 
   def cache(url)

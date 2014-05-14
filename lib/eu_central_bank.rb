@@ -11,24 +11,48 @@ class EuCentralBank < Money::Bank::VariableExchange
   attr_accessor :rates_updated_at
   attr_accessor :historical_last_updated
   attr_accessor :historical_rates_updated_at
+  attr_accessor :cache
+  attr_reader   :ttl_in_seconds
+  attr_reader   :rates_expiration
 
   CURRENCIES = %w(USD JPY BGN CZK DKK GBP HUF ILS LTL PLN RON SEK CHF NOK HRK RUB TRY AUD BRL CAD CNY HKD IDR INR KRW MXN MYR NZD PHP SGD THB ZAR)
   ECB_RATES_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
   ECB_90_DAY_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml'
 
-  def update_rates(cache=nil)
-    update_parsed_rates(doc(cache))
+  def ttl_in_seconds=(value)
+    @ttl_in_seconds=value
+    refresh_rates_expiration if value
   end
 
-  def update_historical_rates(cache=nil)
-    update_parsed_historical_rates(doc(cache, ECB_90_DAY_URL))
+  def refresh_rates_expiration
+    @rates_expiration = Time.now + ttl_in_seconds
   end
 
-  def save_rates(cache, url=ECB_RATES_URL)
+  def expire_rates
+    if ttl_in_seconds and rates_expiration <= Time.now
+      update_rates(false)
+      refresh_rates_expiration
+    end
+  end
+
+  def update_rates(use_cache=true)
+    update_parsed_rates(doc(use_cache))
+  end
+
+  def update_historical_rates
+    update_parsed_historical_rates(doc(ECB_90_DAY_URL)
+  end
+
+  def save_rates(url=ECB_RATES_URL)
     raise InvalidCache unless cache
-    File.open(cache, "w") do |file|
-      io = open(url);
-      io.each_line { |line| file.puts line }
+    case cache
+    when String
+      File.open(cache, "w") do |file|
+        io = open(url);
+        io.each_line { |line| file.puts line }
+      end
+    when Proc
+      cache.call(save_rates_to_s(url))
     end
   end
 
@@ -61,6 +85,7 @@ class EuCentralBank < Money::Bank::VariableExchange
   end
 
   def get_rate(from, to, opts = {})
+    expire_rates
     fn = -> { @rates[rate_key_for(from, to, opts)] }
 
     if opts[:without_mutex]
@@ -82,10 +107,20 @@ class EuCentralBank < Money::Bank::VariableExchange
 
   protected
 
-  def doc(cache, url=ECB_RATES_URL)
-    rates_source = !!cache ? cache : url
-    Nokogiri::XML(open(rates_source)).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
+  def doc(use_cache=true, url=ECB_RATES_URL)
+    if use_cache
+      case cache
+      when String
+        Nokogiri::XML(open(cache)).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
+      when Proc
+        doc_from_s(cache.call(nil))
+      end
+    else
+      save_rates(url)
+      Nokogiri::XML(open(url)).tap { |doc| doc.xpath('gesmes:Envelope/xmlns:Cube/xmlns:Cube//xmlns:Cube') }
+    end
   rescue Nokogiri::XML::XPath::SyntaxError
+    save_rates(url)
     Nokogiri::XML(open(url))
   end
 

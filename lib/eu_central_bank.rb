@@ -46,8 +46,8 @@ class EuCentralBank < Money::Bank::VariableExchange
     update_parsed_rates(doc(use_cache))
   end
 
-  def update_historical_rates
-    update_parsed_historical_rates(doc(ECB_90_DAY_URL))
+  def update_historical_rates(use_cache=true)
+    update_parsed_historical_rates(doc(use_cache, ECB_90_DAY_URL))
   end
 
   def save_rates(url=ECB_RATES_URL)

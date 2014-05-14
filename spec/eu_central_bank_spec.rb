@@ -89,10 +89,11 @@ describe "EuCentralBank" do
   end
 
   it 'should set historical last_updated when the rates are downloaded' do
+    @bank.historical_cache = @history_cache_path
     lu1 = @bank.historical_last_updated
-    @bank.update_historical_rates(@history_cache_path)
+    @bank.update_historical_rates
     lu2 = @bank.historical_last_updated
-    @bank.update_historical_rates(@history_cache_path)
+    @bank.update_historical_rates
     lu3 = @bank.historical_last_updated
 
     lu1.should_not eq(lu2)
@@ -108,7 +109,8 @@ describe "EuCentralBank" do
   end
 
   it "should return the correct exchange rates using exchange" do
-    @bank.update_rates(@cache_path)
+    @bank.latest_cache = @cache_path
+    @bank.update_rates
     EuCentralBank::CURRENCIES.each do |currency|
       subunit_to_unit  = Money::Currency.wrap(currency).subunit_to_unit
       exchanged_amount = @bank.exchange(100, "EUR", currency)
@@ -117,7 +119,8 @@ describe "EuCentralBank" do
   end
 
   it "should return the correct exchange rates using exchange_with" do
-    @bank.update_rates(@cache_path)
+    @bank.latest_cache = @cache_path
+    @bank.update_rates
     EuCentralBank::CURRENCIES.each do |currency|
       subunit_to_unit  = Money::Currency.wrap(currency).subunit_to_unit
       amount_from_rate = (@exchange_rates["currencies"][currency] * subunit_to_unit).round(0).to_i
@@ -129,7 +132,8 @@ describe "EuCentralBank" do
   it "should return the correct exchange rates using historical exchange" do
     yml_path = File.expand_path(File.dirname(__FILE__) + '/historical_exchange_rates.yml')
     historical_exchange_rates = YAML.load_file(yml_path)
-    @bank.update_historical_rates(@history_cache_path)
+    @bank.historical_cache = @history_cache_path
+    @bank.update_historical_rates
 
     EuCentralBank::CURRENCIES.each do |currency|
       subunit_to_unit  = Money::Currency.wrap(currency).subunit_to_unit
@@ -143,16 +147,23 @@ describe "EuCentralBank" do
     odd_rates = File.expand_path(File.dirname(__FILE__) + '/odd_exchange_rates.xml')
 
     odd_thread = Thread.new do
-      while true; @bank.update_rates(odd_rates); end
+      while true
+        @bank.latest_cache = odd_rates
+        @bank.update_rates
+      end
     end
 
     even_thread = Thread.new do
-      while true;  @bank.update_rates(even_rates); end
+      while true
+        @bank.latest_cache = even_rates
+        @bank.update_rates(even_rates)
+      end
     end
 
     # Updating bank rates so that we're sure the test won't fail prematurely
     # (i.e. even without odd_thread/even_thread getting a change to run)
-    @bank.update_rates(odd_rates)
+    @bank.latest_cache = odd_rates
+    @bank.update_rates
 
     10000.times do
       rates = YAML.load(@bank.export_rates(:yaml))

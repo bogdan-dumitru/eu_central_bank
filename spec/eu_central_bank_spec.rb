@@ -175,7 +175,7 @@ describe "EuCentralBank" do
     end
   end
 
-  it "should update update_rates atomically" do
+  it "should update update_rates atomically", slow: true do
     even_rates = File.expand_path(File.dirname(__FILE__) + '/even_exchange_rates.xml')
     odd_rates = File.expand_path(File.dirname(__FILE__) + '/odd_exchange_rates.xml')
 
@@ -211,7 +211,7 @@ describe "EuCentralBank" do
     odd_thread.kill
   end
 
-  it "should exchange money atomically" do
+  it "should exchange money atomically", slow: true do
     # NOTE: We need to introduce an artificial delay in the core get_rate
     # function, otherwise it will take a lot of iterations to hit some sort or
     # 'race-condition'

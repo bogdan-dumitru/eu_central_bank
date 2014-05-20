@@ -27,55 +27,34 @@ describe "EuCentralBank" do
   end
 
   describe 'using proc for cache' do
-    it "should call the cache proc with a value when given a proc" do
+    it "should cache the rates" do
       @bank.latest_cache = proc do |val|
-        @cache_value  = val
+        if val.nil?
+          @cache_value
+        else
+          @cache_value = val
+        end
       end
-      @bank.save_rates
-      @cache_value.should_not be(nil)
+
+      @bank.update_rates
+      @cache_value.should_not be_nil
     end
 
-    it "should restore the rates from the proc cache after saving them initially" do
+    it "should restore the rates from the cache" do
       # Get the current rates
-      get_count = 0
-      set_count = 0
-
       @bank.latest_cache = proc do |val|
         if val.nil?
-          get_count += 1
           @cache_value
         else
-          set_count += 1
           @cache_value = val
         end
       end
 
       @bank.update_rates
+
+      @bank.latest_cache.should_receive(:call).with(nil).exactly(2).times.and_return { @cache_value }
       @bank.update_rates
-      set_count.should eq(1)
-      get_count.should eq(3)
     end
-
-    it "should refresh the proc cahce if forced" do
-      get_count = 0
-      set_count = 0
-
-      @bank.latest_cache = proc do |val|
-        if val.nil?
-          get_count += 1
-          @cache_value
-        else
-          set_count += 1
-          @cache_value = val
-        end
-      end
-
-      @bank.update_rates
-      @bank.update_rates(false)
-      set_count.should eq(2)
-      get_count.should eq(2)
-    end
-
   end
 
   it "should save the xml file from ecb given a file path and url" do

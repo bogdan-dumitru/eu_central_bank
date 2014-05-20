@@ -57,6 +57,58 @@ describe "EuCentralBank" do
     end
   end
 
+  describe "#get_rates" do
+    context "when a ttl is provided" do
+      context "as a proc" do
+        before(:each) do
+          @bank.ttl_in_seconds= proc { 3600 * 24 }
+          @bank.update_rates
+        end
+
+        it "should update rates if is referred to future" do
+          @bank.should_not_receive(:update_rates)
+          @bank.get_rate(:eur, :usd)
+        end
+
+        it "should not update rates if is referred to present" do
+          Timecop.freeze(@bank.rates_expiration + 10) do
+            @bank.should_receive(:update_rates).with(false)
+            @bank.get_rate(:eur, :usd)
+          end
+        end
+      end
+
+      context "as a value" do
+        before(:each) do
+          @bank.ttl_in_seconds= 3600 * 24
+          @bank.update_rates
+        end
+
+        it "should update rates if is referred to future" do
+          @bank.should_not_receive(:update_rates)
+          @bank.get_rate(:eur, :usd)
+        end
+
+        it "should not update rates if is referred to present" do
+          Timecop.freeze(@bank.rates_expiration + 10) do
+            @bank.should_receive(:update_rates).with(false)
+            @bank.get_rate(:eur, :usd)
+          end
+        end
+      end
+    end
+
+    context "when a ttl isn't provided" do
+      it "should never receive #update_rates" do
+        @bank.should_not_receive(:update_rates)
+        @bank.get_rate(:eur, :usd)
+      end
+    end
+
+  end
+
+
+
   it "should save the xml file from ecb given a file path and url" do
     tmp_history_cache_path = File.expand_path(@dir_path + '/tmp/exchange_rates_90_day.xml')
     @bank.historical_cache = tmp_history_cache_path

@@ -18,6 +18,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rspec", ">= 2.0.0"
   s.add_development_dependency "shoulda"
   s.add_development_dependency "pry"
+  s.add_development_dependency "timecop"
 
   s.files         = Dir.glob("lib/**/*") + %w(CHANGELOG.md LICENSE README.md)
   s.require_path = "lib"

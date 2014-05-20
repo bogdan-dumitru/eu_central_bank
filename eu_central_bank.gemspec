@@ -16,8 +16,8 @@ Gem::Specification.new do |s|
   s.add_dependency "money", ">= 6.0.1"
 
   s.add_development_dependency "rspec", ">= 2.0.0"
-  s.add_development_dependency "rr"
   s.add_development_dependency "shoulda"
+  s.add_development_dependency "pry"
 
   s.files         = Dir.glob("lib/**/*") + %w(CHANGELOG.md LICENSE README.md)
   s.require_path = "lib"

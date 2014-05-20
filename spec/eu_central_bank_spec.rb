@@ -1,6 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require 'yaml'
-require 'pry'
 
 describe "EuCentralBank" do
   before(:each) do
@@ -92,7 +91,7 @@ describe "EuCentralBank" do
   end
 
   it "should update itself with exchange rates from ecb website" do
-    stub(OpenURI::OpenRead).open(EuCentralBank::ECB_RATES_URL) {@cache_path}
+    OpenURI::OpenRead.stub(:open).with(EuCentralBank::ECB_RATES_URL)  { @cache_path }
     @bank.update_rates
     EuCentralBank::CURRENCIES.each do |currency|
       @bank.get_rate("EUR", currency).should > 0
@@ -101,7 +100,7 @@ describe "EuCentralBank" do
 
   it "should update itself with exchange rates from ecb website when the data get from cache is illegal" do
     illegal_cache_path = File.expand_path(@dir_path + '/illegal_exchange_rates.xml')
-    stub(OpenURI::OpenRead).open(EuCentralBank::ECB_RATES_URL) {@cache_path}
+    OpenURI::OpenRead.stub(:open).with(EuCentralBank::ECB_RATES_URL)  { @cache_path }
     @bank.update_rates(illegal_cache_path)
     EuCentralBank::CURRENCIES.each do |currency|
       @bank.get_rate("EUR", currency).should > 0
@@ -116,7 +115,7 @@ describe "EuCentralBank" do
   end
 
   it "should export to a string a valid cache that can be reread" do
-    stub(OpenURI::OpenRead).open(EuCentralBank::ECB_RATES_URL) {@cache_path}
+    OpenURI::OpenRead.stub(:open).with(EuCentralBank::ECB_RATES_URL)  { @cache_path }
     s = @bank.save_rates_to_s
     @bank.update_rates_from_s(s)
     EuCentralBank::CURRENCIES.each do |currency|

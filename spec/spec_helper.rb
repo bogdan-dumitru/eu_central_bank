@@ -1,7 +1,8 @@
 require 'eu_central_bank'
 require 'shoulda'
-require 'rr'
+require 'pry'
+# require 'rr'
 
 RSpec.configure do |config|
-  config.mock_with :rr
+  # config.mock_with :rr
 end

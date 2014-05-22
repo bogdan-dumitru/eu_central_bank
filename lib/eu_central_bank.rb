@@ -17,7 +17,7 @@ class EuCentralBank < Money::Bank::VariableExchange
 
   CURRENCIES = %w(USD JPY BGN CZK DKK GBP HUF ILS LTL PLN RON SEK CHF NOK HRK RUB TRY AUD BRL CAD CNY HKD IDR INR KRW MXN MYR NZD PHP SGD THB ZAR)
   ECB_RATES_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
-  ECB_90_DAY_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml'
+  ECB_HIST_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml'
 
   def ttl_in_seconds=(value)
     @ttl_in_seconds=value
@@ -32,7 +32,7 @@ class EuCentralBank < Money::Bank::VariableExchange
   def cache(url)
     case url
     when ECB_RATES_URL then latest_cache
-    when ECB_90_DAY_URL then historical_cache
+    when ECB_HIST_URL then historical_cache
     end
   end
 
@@ -48,7 +48,7 @@ class EuCentralBank < Money::Bank::VariableExchange
   end
 
   def update_historical_rates(use_cache=true)
-    update_parsed_historical_rates(doc(use_cache, ECB_90_DAY_URL))
+    update_parsed_historical_rates(doc(use_cache, ECB_HIST_URL))
   end
 
   def save_rates(url=ECB_RATES_URL)

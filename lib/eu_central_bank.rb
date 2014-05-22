@@ -17,7 +17,7 @@ class EuCentralBank < Money::Bank::VariableExchange
 
   CURRENCIES = %w(USD JPY BGN CZK DKK GBP HUF ILS LTL PLN RON SEK CHF NOK HRK RUB TRY AUD BRL CAD CNY HKD IDR INR KRW MXN MYR NZD PHP SGD THB ZAR)
   ECB_RATES_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
-  ECB_HIST_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml'
+  ECB_HIST_URL = 'https://s3.amazonaws.com/anyroads/eurofxref-hist-2012.xml'
 
   def ttl_in_seconds=(value)
     @ttl_in_seconds=value
